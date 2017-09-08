@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
+using System;
+using System.Data.Entity;
 
 namespace prueba_individual.Models
 {
@@ -20,6 +22,9 @@ namespace prueba_individual.Models
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
+        [ThreadStatic]
+        public static ApplicationDbContext applicationDbContext;
+
         public ApplicationDbContext()
             : base("DefaultConnection", throwIfV1Schema: false)
         {
@@ -29,5 +34,8 @@ namespace prueba_individual.Models
         {
             return new ApplicationDbContext();
         }
+
+        public DbSet<Vuelo> Perfiles { get; set; }
+        public DbSet<Aeropuerto> Campos { get; set; }
     }
 }
