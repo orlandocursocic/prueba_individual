@@ -9,24 +9,35 @@ using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.Description;
 using prueba_individual.Models;
+using prueba_individual.Services;
+using System.Web.Http.Cors;
+using prueba_individual.Exceptions;
 
 namespace prueba_individual.Controllers
 {
+    [EnableCors(origins: "http://localhost:8080", headers: "*", methods: "*")]
     public class VuelosController : ApiController
     {
+        private IVuelosService vuelosService;
+
+        public VuelosController(IVuelosService vuelosService)
+        {
+            this.vuelosService = vuelosService;
+        }
+
         private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: api/Vuelos
         public IQueryable<Vuelo> GetPerfiles()
         {
-            return db.Perfiles;
+            return vuelosService.ReadAll();
         }
 
         // GET: api/Vuelos/5
         [ResponseType(typeof(Vuelo))]
         public IHttpActionResult GetVuelo(long id)
         {
-            Vuelo vuelo = db.Perfiles.Find(id);
+            Vuelo vuelo = vuelosService.Read(id);
             if (vuelo == null)
             {
                 return NotFound();
@@ -49,22 +60,13 @@ namespace prueba_individual.Controllers
                 return BadRequest();
             }
 
-            db.Entry(vuelo).State = EntityState.Modified;
-
             try
             {
-                db.SaveChanges();
+                vuelosService.Update(vuelo);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (NoEncontradoException)
             {
-                if (!VueloExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound();
             }
 
             return StatusCode(HttpStatusCode.NoContent);
@@ -79,8 +81,7 @@ namespace prueba_individual.Controllers
                 return BadRequest(ModelState);
             }
 
-            db.Perfiles.Add(vuelo);
-            db.SaveChanges();
+            vuelo = vuelosService.Create(vuelo);
 
             return CreatedAtRoute("DefaultApi", new { id = vuelo.Id }, vuelo);
         }
@@ -89,30 +90,18 @@ namespace prueba_individual.Controllers
         [ResponseType(typeof(Vuelo))]
         public IHttpActionResult DeleteVuelo(long id)
         {
-            Vuelo vuelo = db.Perfiles.Find(id);
-            if (vuelo == null)
+            Vuelo vuelo;
+            try
+            {
+                vuelo = vuelosService.Delete(id);
+            }
+            catch (NoEncontradoException)
             {
                 return NotFound();
             }
 
-            db.Perfiles.Remove(vuelo);
-            db.SaveChanges();
-
             return Ok(vuelo);
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                db.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        private bool VueloExists(long id)
-        {
-            return db.Perfiles.Count(e => e.Id == id) > 0;
-        }
     }
 }

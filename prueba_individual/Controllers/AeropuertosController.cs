@@ -9,24 +9,35 @@ using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.Description;
 using prueba_individual.Models;
+using prueba_individual.Services;
+using System.Web.Http.Cors;
+using prueba_individual.Exceptions;
 
 namespace prueba_individual.Controllers
 {
+    [EnableCors(origins: "http://localhost:8080", headers: "*", methods: "*")]
     public class AeropuertosController : ApiController
     {
+        private IAeropuertosService aeropuertosService;
+
+        public AeropuertosController(IAeropuertosService aeropuertosService)
+        {
+            this.aeropuertosService = aeropuertosService;
+        }
+
         private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: api/Aeropuertos
         public IQueryable<Aeropuerto> GetCampos()
         {
-            return db.Campos;
+            return aeropuertosService.ReadAll();
         }
 
         // GET: api/Aeropuertos/5
         [ResponseType(typeof(Aeropuerto))]
         public IHttpActionResult GetAeropuerto(long id)
         {
-            Aeropuerto aeropuerto = db.Campos.Find(id);
+            Aeropuerto aeropuerto = aeropuertosService.Read(id);
             if (aeropuerto == null)
             {
                 return NotFound();
@@ -49,22 +60,13 @@ namespace prueba_individual.Controllers
                 return BadRequest();
             }
 
-            db.Entry(aeropuerto).State = EntityState.Modified;
-
             try
             {
-                db.SaveChanges();
+                aeropuertosService.Update(aeropuerto);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (NoEncontradoException)
             {
-                if (!AeropuertoExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound();
             }
 
             return StatusCode(HttpStatusCode.NoContent);
@@ -79,8 +81,7 @@ namespace prueba_individual.Controllers
                 return BadRequest(ModelState);
             }
 
-            db.Campos.Add(aeropuerto);
-            db.SaveChanges();
+            aeropuerto = aeropuertosService.Create(aeropuerto);
 
             return CreatedAtRoute("DefaultApi", new { id = aeropuerto.Id }, aeropuerto);
         }
@@ -89,30 +90,17 @@ namespace prueba_individual.Controllers
         [ResponseType(typeof(Aeropuerto))]
         public IHttpActionResult DeleteAeropuerto(long id)
         {
-            Aeropuerto aeropuerto = db.Campos.Find(id);
-            if (aeropuerto == null)
+            Aeropuerto aeropuerto;
+            try
+            {
+                aeropuerto = aeropuertosService.Delete(id);
+            }
+            catch (NoEncontradoException)
             {
                 return NotFound();
             }
 
-            db.Campos.Remove(aeropuerto);
-            db.SaveChanges();
-
             return Ok(aeropuerto);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                db.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        private bool AeropuertoExists(long id)
-        {
-            return db.Campos.Count(e => e.Id == id) > 0;
         }
     }
 }

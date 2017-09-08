@@ -35,7 +35,7 @@ namespace prueba_individual.Models
             return new ApplicationDbContext();
         }
 
-        public DbSet<Vuelo> Perfiles { get; set; }
-        public DbSet<Aeropuerto> Campos { get; set; }
+        public DbSet<Vuelo> Vuelos { get; set; }
+        public DbSet<Aeropuerto> Aeropuertos { get; set; }
     }
 }

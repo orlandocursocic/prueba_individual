@@ -10,5 +10,6 @@ namespace prueba_individual.Models
     public class Vuelo
     {
         public long Id { get; set; }
+        public string Nombre { get; set; }
     }
 }
