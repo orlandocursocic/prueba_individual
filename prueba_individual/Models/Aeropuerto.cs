@@ -11,5 +11,8 @@ namespace prueba_individual.Models
     {
         public long Id {get; set;}
         public string Nombre { get; set; }
+        public int numTerminales { get; set; }
+        public string Ciudad { get; set; } 
+        public string Pais { get; set; }
     }
 }
